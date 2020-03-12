@@ -12,11 +12,13 @@ import model.net as net
 import model.resnet as resnet
 import model.data_loader as data_loader
 import torch.optim as optim
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_dir', default='experiments/base_model', help="Directory of params.json")
 parser.add_argument('--restore_file', default='best', help="name of the file in --model_dir \
                      containing weights to load")
+parser.add_argument('--device', default='gpu', help="CPU or GPU")
 
 
 def evaluate(model, loss_fn, dataloader, metrics, params):
@@ -47,13 +49,16 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
         data_batch, labels_batch = Variable(data_batch), Variable(labels_batch)
         
         # compute model output
+        start = time.perf_counter()
         output_batch = model(data_batch)
+        torch.cuda.synchronize()
+        end=time.perf_counter()
+        print("Time(ms) : {:.04}".format((end-start)*1000))
         loss = loss_fn(output_batch, labels_batch)
 
         # extract data from torch Variable, move to cpu, convert to numpy arrays
         output_batch = output_batch.data.cpu().numpy()
         labels_batch = labels_batch.data.cpu().numpy()
-
         # compute all metrics on this batch
         summary_batch = {metric: metrics[metric](output_batch, labels_batch)
                          for metric in metrics}
@@ -78,7 +83,7 @@ if __name__ == '__main__':
      params = utils.Params(json_path)
 
      # use GPU if available
-     params.cuda = torch.cuda.is_available()     # use GPU is available
+     params.cuda = torch.cuda.is_available() and args.device == "gpu"    # use GPU is available
 
      # Set the random seed for reproducible experiments
      torch.manual_seed(230)
@@ -97,12 +102,15 @@ if __name__ == '__main__':
      logging.info("- done.")
 
      # Define the model graph
-     if params.model_version == "resnet18":
+     if params.model_version == "resnet18" or params.model_version == "res50-res18_distill":
          model = resnet.ResNet18().cuda() if params.cuda else resnet.ResNet18()
-     elif params.model_version == "resnet34":
+     elif params.model_version == "resnet34" or params.model_version == "res50-res34_distill":
          model = resnet.ResNet34().cuda() if params.cuda else resnet.ResNet34()
-     optimizer = optim.SGD(model.parameters(), lr=params.learning_rate,
-                           momentum=0.9, weight_decay=5e-4)
+     elif params.model_version == "resnet50":
+         model = resnet.ResNet50().cuda() if params.cuda else resnet.ResNet50()
+         model = torch.nn.DataParallel(model)
+     elif params.model_version == "res50-cnn_distill":
+         model = net.Net(params).cuda() if params.cuda else net.Net(params)
      # fetch loss function and metrics
      loss_fn = net.loss_fn
      metrics = resnet.metrics
@@ -110,7 +118,7 @@ if __name__ == '__main__':
      logging.info("Starting evaluation...")
 
      # Reload weights from the saved file
-     utils.load_checkpoint(os.path.join(args.model_dir, args.restore_file + '.pth.tar'), model)
+     utils.load_checkpoint(os.path.join(args.model_dir, args.restore_file + '.pth.tar'), model)#, checkpointName='net')
 
      # Evaluate
      test_metrics = evaluate(model, loss_fn, dev_dl, metrics, params)

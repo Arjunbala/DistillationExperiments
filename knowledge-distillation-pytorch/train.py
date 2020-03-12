@@ -279,10 +279,10 @@ def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader
     logging.info("- Finished computing teacher outputs after {} secs..".format(elapsed_time))
 
     # learning rate schedulers for different models:
-    if params.model_version == "resnet18_distill" or params.model_version == "res34-18_distill" or params.model_version == "res50-res18_distill":
+    if params.model_version == "resnet18_distill" or params.model_version == "res34-18_distill" or params.model_version == "res50-res18_distill" or params.model_version == 'res50-res34_distill':
         scheduler = StepLR(optimizer, step_size=50, gamma=0.1)
     # for cnn models, num_epoch is always < 100, so it's intentionally not using scheduler here
-    elif params.model_version == "cnn_distill": 
+    elif params.model_version == "cnn_distill" or params.model_version == "res50-cnn_distill": 
         scheduler = StepLR(optimizer, step_size=100, gamma=0.2) 
 
     for epoch in range(params.num_epochs):
@@ -378,7 +378,7 @@ if __name__ == '__main__':
     if "distill" in params.model_version:
 
         # train a 5-layer CNN or a 18-layer ResNet with knowledge distillation
-        if params.model_version == "cnn_distill":
+        if params.model_version == "cnn_distill" or params.model_version == "res50-cnn_distill":
             model = net.Net(params).cuda() if params.cuda else net.Net(params)
             optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
             # fetch loss function and metrics definition in model files
@@ -401,6 +401,14 @@ if __name__ == '__main__':
             loss_fn_kd = net.loss_fn_kd
             metrics = resnet.metrics
 
+        elif params.model_version == "res50-res18_distill" or params.model_version == "res50-res34_distill":
+            model = resnet.ResNet34().cuda() if params.cuda else resnet.ResNet34()
+            optimizer = optim.SGD(model.parameters(), lr=params.learning_rate,
+                                  momentum=0.9, weight_decay=5e-4)
+            # fetch loss function and metrics definition in model files
+            loss_fn_kd = net.loss_fn_kd
+            metrics = resnet.metrics
+
         """ 
             Specify the pre-trained teacher models for knowledge distillation
             Important note: wrn/densenet/resnext/preresnet were pre-trained models using multi-GPU,
@@ -414,8 +422,9 @@ if __name__ == '__main__':
 
         elif params.teacher == "resnet50":
             teacher_model = resnet.ResNet50()
-            teacher_checkpoint = 'experiments/base_resnet50/best.pth.tar'
+            teacher_checkpoint = 'experiments/base_resnet50/ckpt.pth'
             teacher_model = teacher_model.cuda() if params.cuda else teacher_model
+            teacher_model = torch.nn.DataParallel(teacher_model)
 
         elif params.teacher == "wrn":
             teacher_model = wrn.WideResNet(depth=28, num_classes=10, widen_factor=10,
@@ -443,7 +452,7 @@ if __name__ == '__main__':
             teacher_checkpoint = 'experiments/base_resnet34/best.pth.tar'
             teacher_model = teacher_model.cuda() if params.cuda else teacher_model
 
-        utils.load_checkpoint(teacher_checkpoint, teacher_model)
+        utils.load_checkpoint(teacher_checkpoint, teacher_model, checkpointName='net')
 
         # Train the model with KD
         logging.info("Experiment - model version: {}".format(params.model_version))

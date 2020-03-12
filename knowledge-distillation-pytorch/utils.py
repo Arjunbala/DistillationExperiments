@@ -138,7 +138,7 @@ def save_checkpoint(state, is_best, checkpoint):
         shutil.copyfile(filepath, os.path.join(checkpoint, 'best.pth.tar'))
 
 
-def load_checkpoint(checkpoint, model, optimizer=None):
+def load_checkpoint(checkpoint, model, optimizer=None, checkpointName='state_dict'):
     """Loads model parameters (state_dict) from file_path. If optimizer is provided, loads state_dict of
     optimizer assuming it is present in checkpoint.
 
@@ -155,7 +155,7 @@ def load_checkpoint(checkpoint, model, optimizer=None):
         # this helps avoid errors when loading single-GPU-trained weights onto CPU-model
         checkpoint = torch.load(checkpoint, map_location=lambda storage, loc: storage)
 
-    model.load_state_dict(checkpoint['state_dict'])
+    model.load_state_dict(checkpoint[checkpointName])
 
     if optimizer:
         optimizer.load_state_dict(checkpoint['optim_dict'])
