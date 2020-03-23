@@ -18,10 +18,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--model_dir', default='experiments/base_model', help="Directory of params.json")
 parser.add_argument('--restore_file', default='best', help="name of the file in --model_dir \
                      containing weights to load")
-parser.add_argument('--dataset', default='dev', help="dataset to analze the model on")
+parser.add_argument('--dataset_type', default='dev', help="dataset to analze the model on")
 parser.add_argument('--temperature', type=float, default=1.0, \
                     help="temperature used for softmax output")
-
+parser.add_argument('--dataset', default='cifar10', help="dataset for analysis")
 
 def model_analysis(model, dataloader, params, temperature=1., num_classes=10):
     """
@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()     # use GPU is available
-
+    params.dataset = args.dataset
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
     if params.cuda: torch.cuda.manual_seed(230)
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     # fetch dataloaders
     # train_dl = data_loader.fetch_dataloader('train', params)
     # dev_dl = data_loader.fetch_dataloader('dev', params)
-    dataloader = data_loader.fetch_dataloader(args.dataset, params)
+    dataloader = data_loader.fetch_dataloader(args.dataset_type, params)
 
     logging.info("- done.")
 
@@ -112,6 +112,6 @@ if __name__ == '__main__':
                'confusion_matrix': confusion_matrix}
 
     for k, v in results.items():
-        filename = args.dataset + '_temp' + str(args.temperature) + '_' + k + '.txt'
+        filename = args.dataset_type + '_temp' + str(args.temperature) + '_' + k + '.txt'
         save_path = os.path.join(args.model_dir, filename)
         np.savetxt(save_path, v)

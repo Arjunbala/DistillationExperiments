@@ -32,7 +32,7 @@ parser.add_argument('--model_dir', default='experiments/base_model',
 parser.add_argument('--restore_file', default=None,
                     help="Optional, name of the file in --model_dir \
                     containing weights to reload before training")  # 'best' or 'train'
-
+parser.add_argument('--dataset', default='cifar10', help="Dataset to use")
 
 def train(model, optimizer, loss_fn, dataloader, metrics, params):
     """Train the model on `num_steps` batches
@@ -117,7 +117,7 @@ def train_and_evaluate(model, train_dataloader, val_dataloader, optimizer,
     best_val_acc = 0.0
 
     # learning rate schedulers for different models:
-    if params.model_version == "resnet18" or params.model_version == "resnet34" or params.model_version == "resnet50":
+    if params.model_version == "resnet18" or params.model_version == "resnet34" or params.model_version == "resnet50" or params.model_version == "resnet152" or params.model_version == "resnet101":
         scheduler = StepLR(optimizer, step_size=150, gamma=0.1)
     # for cnn models, num_epoch is always < 100, so it's intentionally not using scheduler here
     elif params.model_version == "cnn":
@@ -347,8 +347,11 @@ if __name__ == '__main__':
     assert os.path.isfile(json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
 
+   
     # use GPU if available
     params.cuda = torch.cuda.is_available()
+    # set the dataset
+    params.dataset = args.dataset
 
     # Set the random seed for reproducible experiments
     random.seed(230)
@@ -487,7 +490,23 @@ if __name__ == '__main__':
             metrics = resnet.metrics
 
         elif params.model_version == "resnet50":
-            model = resnet.ResNet50().cuda() if params.cuda else resnet.ResNet50()
+            model = resnet.ResNet50(100).cuda() if params.cuda else resnet.ResNet50(100)
+            optimizer = optim.SGD(model.parameters(), lr=params.learning_rate,
+                                  momentum=0.9, weight_decay=5e-4)
+            # fetch loss function and metrics
+            loss_fn = resnet.loss_fn
+            metrics = resnet.metrics
+
+        elif params.model_version == "resnet152":
+            model = resnet.ResNet152(100).cuda() if params.cuda else resnet.ResNet152(100)
+            optimizer = optim.SGD(model.parameters(), lr=params.learning_rate,
+                                  momentum=0.9, weight_decay=5e-4)
+            # fetch loss function and metrics
+            loss_fn = resnet.loss_fn
+            metrics = resnet.metrics
+
+        elif params.model_version == "resnet101":
+            model = resnet.ResNet101(100).cuda() if params.cuda else resnet.ResNet101(100)
             optimizer = optim.SGD(model.parameters(), lr=params.learning_rate,
                                   momentum=0.9, weight_decay=5e-4)
             # fetch loss function and metrics

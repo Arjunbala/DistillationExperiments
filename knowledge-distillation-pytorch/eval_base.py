@@ -19,7 +19,7 @@ parser.add_argument('--model_dir', default='experiments/base_model', help="Direc
 parser.add_argument('--restore_file', default='best', help="name of the file in --model_dir \
                      containing weights to load")
 parser.add_argument('--device', default='gpu', help="CPU or GPU")
-
+parser.add_argument('--dataset', default='cifar10', help="Dataset to use")
 
 def evaluate(model, loss_fn, dataloader, metrics, params):
     """Evaluate the model on `num_steps` batches.
@@ -84,7 +84,8 @@ if __name__ == '__main__':
 
      # use GPU if available
      params.cuda = torch.cuda.is_available() and args.device == "gpu"    # use GPU is available
-
+     params.dataset = args.dataset
+     
      # Set the random seed for reproducible experiments
      torch.manual_seed(230)
      if params.cuda: torch.cuda.manual_seed(230)

@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--model_dir', default='experiments/base_model', help="Directory of params.json")
 parser.add_argument('--restore_file', default='best', help="name of the file in --model_dir \
                      containing weights to load")
-
+parser.add_argument('--dataset', default='cifar10', help="dataset to use")
 
 def evaluate(model, loss_fn, dataloader, metrics, params):
     """Evaluate the model on `num_steps` batches.
@@ -134,6 +134,7 @@ if __name__ == '__main__':
 
      # use GPU if available
      params.cuda = torch.cuda.is_available()     # use GPU is available
+     params.dataset = args.dataset
 
      # Set the random seed for reproducible experiments
      torch.manual_seed(230)
