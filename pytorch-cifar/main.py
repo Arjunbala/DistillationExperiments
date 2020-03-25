@@ -80,7 +80,7 @@ if args.resume:
     # Load checkpoint.
     print('==> Resuming from checkpoint..')
     assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
-    checkpoint = torch.load('./checkpoint/ckpt.pth')
+    checkpoint = torch.load('./checkpoint/resnet152.pth')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
@@ -146,6 +146,6 @@ def test(epoch):
         best_acc = acc
 
 
-for epoch in range(start_epoch, args.epoch):
+for epoch in range(start_epoch, start_epoch+args.epoch):
     train(epoch)
     test(epoch)

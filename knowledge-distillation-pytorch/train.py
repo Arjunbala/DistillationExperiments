@@ -279,7 +279,10 @@ def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader
     logging.info("- Finished computing teacher outputs after {} secs..".format(elapsed_time))
 
     # learning rate schedulers for different models:
-    if params.model_version == "resnet18_distill" or params.model_version == "res34-18_distill" or params.model_version == "res50-res18_distill" or params.model_version == 'res50-res34_distill':
+    if params.model_version == "resnet18_distill" or params.model_version == "res34-18_distill" \
+        or params.model_version == "res50-res18_distill" or params.model_version == "res50-res34_distill" \
+        or params.model_version == "res152-res101_distill" or params.model_version == "res152-res50_distill" \
+        or params.model_version == "res152-res34_distill":
         scheduler = StepLR(optimizer, step_size=50, gamma=0.1)
     # for cnn models, num_epoch is always < 100, so it's intentionally not using scheduler here
     elif params.model_version == "cnn_distill" or params.model_version == "res50-cnn_distill": 
@@ -338,6 +341,11 @@ def train_and_evaluate_kd(model, teacher_model, train_dataloader, val_dataloader
         #     board_logger.histo_summary(tag, value.data.cpu().numpy(), epoch+1)
         #     # board_logger.histo_summary(tag+'/grad', value.grad.data.cpu().numpy(), epoch+1)
 
+def get_num_classes(params):
+    if params.dataset == "cifar10":
+        return 10
+    elif params.dataset == "cifar100":
+        return 100
 
 if __name__ == '__main__':
 
@@ -404,8 +412,24 @@ if __name__ == '__main__':
             loss_fn_kd = net.loss_fn_kd
             metrics = resnet.metrics
 
-        elif params.model_version == "res50-res18_distill" or params.model_version == "res50-res34_distill":
-            model = resnet.ResNet34().cuda() if params.cuda else resnet.ResNet34()
+        elif params.model_version == "res50-res34_distill" or params.model_version == "res152-res34_distill":
+            model = resnet.ResNet34(get_num_classes(params)).cuda() if params.cuda else resnet.ResNet34(get_num_classes(params))
+            optimizer = optim.SGD(model.parameters(), lr=params.learning_rate,
+                                  momentum=0.9, weight_decay=5e-4)
+            # fetch loss function and metrics definition in model files
+            loss_fn_kd = net.loss_fn_kd
+            metrics = resnet.metrics
+
+        elif params.model_version == "res152-res101_distill":
+            model = resnet.ResNet101(get_num_classes(params)).cuda() if params.cuda else resnet.ResNet101(get_num_classes(params))
+            optimizer = optim.SGD(model.parameters(), lr=params.learning_rate,
+                                  momentum=0.9, weight_decay=5e-4)
+            # fetch loss function and metrics definition in model files
+            loss_fn_kd = net.loss_fn_kd
+            metrics = resnet.metrics
+
+        elif params.model_version == "res152-res50_distill":
+            model = resnet.ResNet50(get_num_classes(params)).cuda() if params.cuda else resnet.ResNet50(get_num_classes(params))
             optimizer = optim.SGD(model.parameters(), lr=params.learning_rate,
                                   momentum=0.9, weight_decay=5e-4)
             # fetch loss function and metrics definition in model files
@@ -426,6 +450,12 @@ if __name__ == '__main__':
         elif params.teacher == "resnet50":
             teacher_model = resnet.ResNet50()
             teacher_checkpoint = 'experiments/base_resnet50/ckpt.pth'
+            teacher_model = teacher_model.cuda() if params.cuda else teacher_model
+            teacher_model = torch.nn.DataParallel(teacher_model)
+
+        elif params.teacher == "resnet152":
+            teacher_model = resnet.ResNet152(get_num_classes(params))
+            teacher_checkpoint = 'experiments/base_resnet152/base_resnet152.pth'
             teacher_model = teacher_model.cuda() if params.cuda else teacher_model
             teacher_model = torch.nn.DataParallel(teacher_model)
 

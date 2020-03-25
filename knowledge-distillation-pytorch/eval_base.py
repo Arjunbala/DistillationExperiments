@@ -110,6 +110,9 @@ if __name__ == '__main__':
      elif params.model_version == "resnet50":
          model = resnet.ResNet50().cuda() if params.cuda else resnet.ResNet50()
          model = torch.nn.DataParallel(model)
+     elif params.model_version == "resnet152":
+         model = resnet.ResNet152(100).cuda() if params.cuda else resnet.ResNet152(100)
+         model = torch.nn.DataParallel(model)
      elif params.model_version == "res50-cnn_distill":
          model = net.Net(params).cuda() if params.cuda else net.Net(params)
      # fetch loss function and metrics
@@ -119,7 +122,7 @@ if __name__ == '__main__':
      logging.info("Starting evaluation...")
 
      # Reload weights from the saved file
-     utils.load_checkpoint(os.path.join(args.model_dir, args.restore_file + '.pth.tar'), model)#, checkpointName='net')
+     utils.load_checkpoint(os.path.join(args.model_dir, args.restore_file + '.pth'), model, checkpointName='net')
 
      # Evaluate
      test_metrics = evaluate(model, loss_fn, dev_dl, metrics, params)
