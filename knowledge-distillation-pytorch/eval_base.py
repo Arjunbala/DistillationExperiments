@@ -38,6 +38,8 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
 
     # summary for current eval loop
     summ = []
+    correct_wrt_model = 0
+    wrong_wrt_model = 0
 
     # compute metrics over the dataset
     for data_batch, labels_batch in dataloader:
@@ -56,6 +58,8 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
         print("Time(ms) : {:.04}".format((end-start)*1000))
         loss = loss_fn(output_batch, labels_batch)
 
+        _, predicted = output_batch.max(1)
+        print("Pred: ", predicted[0].cpu().numpy())
         # extract data from torch Variable, move to cpu, convert to numpy arrays
         output_batch = output_batch.data.cpu().numpy()
         labels_batch = labels_batch.data.cpu().numpy()
@@ -103,26 +107,28 @@ if __name__ == '__main__':
      logging.info("- done.")
 
      # Define the model graph
-     if params.model_version == "resnet18" or params.model_version == "res50-res18_distill":
-         model = resnet.ResNet18().cuda() if params.cuda else resnet.ResNet18()
-     elif params.model_version == "resnet34" or params.model_version == "res50-res34_distill":
-         model = resnet.ResNet34().cuda() if params.cuda else resnet.ResNet34()
-     elif params.model_version == "resnet50":
-         model = resnet.ResNet50().cuda() if params.cuda else resnet.ResNet50()
-         model = torch.nn.DataParallel(model)
+     if params.model_version == "resnet18" or params.model_version == "res50-res18_distill" or params.model_version == "res152-res18_distill":
+         model = resnet.ResNet18(100).cuda() if params.cuda else resnet.ResNet18(100)
+     elif params.model_version == "resnet34" or params.model_version == "res50-res34_distill" or params.model_version == "res152-res34_distill":
+         model = resnet.ResNet34(100).cuda() if params.cuda else resnet.ResNet34(100)
+     elif params.model_version == "resnet50" or params.model_version == "res152-res50_distill":
+         model = resnet.ResNet50(100).cuda() if params.cuda else resnet.ResNet50(100)
+         #model = torch.nn.DataParallel(model)
+     elif params.model_version == "res152-res101_distill":
+         model = resnet.ResNet101(100).cuda() if params.cuda else resnet.ResNet101(100) 
      elif params.model_version == "resnet152":
          model = resnet.ResNet152(100).cuda() if params.cuda else resnet.ResNet152(100)
-         model = torch.nn.DataParallel(model)
+         #model = torch.nn.DataParallel(model)
      elif params.model_version == "res50-cnn_distill":
          model = net.Net(params).cuda() if params.cuda else net.Net(params)
      # fetch loss function and metrics
      loss_fn = net.loss_fn
      metrics = resnet.metrics
-    
+   
      logging.info("Starting evaluation...")
 
      # Reload weights from the saved file
-     utils.load_checkpoint(os.path.join(args.model_dir, args.restore_file + '.pth'), model, checkpointName='net')
+     utils.load_checkpoint(os.path.join(args.model_dir, args.restore_file + '.pth.tar'), model)#, checkpointName='net')
 
      # Evaluate
      test_metrics = evaluate(model, loss_fn, dev_dl, metrics, params)
