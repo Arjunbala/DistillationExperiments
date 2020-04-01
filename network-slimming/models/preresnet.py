@@ -17,7 +17,6 @@ class Bottleneck(nn.Module):
 
     def __init__(self, inplanes, planes, cfg, stride=1, downsample=None):
         super(Bottleneck, self).__init__()
-        print(cfg)
         self.bn1 = nn.BatchNorm2d(inplanes)
         self.select = channel_selection(inplanes)
         self.conv1 = nn.Conv2d(cfg[0], cfg[1], kernel_size=1, bias=False)
@@ -103,7 +102,6 @@ class resnet(nn.Module):
         layers.append(block(self.inplanes, planes, cfg[0:3], stride, downsample))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            print(i)
             layers.append(block(self.inplanes, planes, cfg[3*i: 3*(i+1)]))
 
         return nn.Sequential(*layers)

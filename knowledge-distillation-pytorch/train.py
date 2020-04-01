@@ -444,8 +444,9 @@ if __name__ == '__main__':
         """
         if params.teacher == "resnet18":
             teacher_model = resnet.ResNet18()
-            teacher_checkpoint = 'experiments/base_resnet18/best.pth.tar'
+            teacher_checkpoint = 'experiments/base_resnet18/resnet18.pth'
             teacher_model = teacher_model.cuda() if params.cuda else teacher_model
+            teacher_model = torch.nn.DataParallel(teacher_model)
 
         elif params.teacher == "resnet50":
             teacher_model = resnet.ResNet50()

@@ -108,7 +108,8 @@ if __name__ == '__main__':
 
      # Define the model graph
      if params.model_version == "resnet18" or params.model_version == "res50-res18_distill" or params.model_version == "res152-res18_distill":
-         model = resnet.ResNet18(100).cuda() if params.cuda else resnet.ResNet18(100)
+         model = resnet.ResNet18().cuda() if params.cuda else resnet.ResNet18()
+         #model = torch.nn.DataParallel(model)
      elif params.model_version == "resnet34" or params.model_version == "res50-res34_distill" or params.model_version == "res152-res34_distill":
          model = resnet.ResNet34(100).cuda() if params.cuda else resnet.ResNet34(100)
      elif params.model_version == "resnet50" or params.model_version == "res152-res50_distill":
@@ -119,7 +120,7 @@ if __name__ == '__main__':
      elif params.model_version == "resnet152":
          model = resnet.ResNet152(100).cuda() if params.cuda else resnet.ResNet152(100)
          #model = torch.nn.DataParallel(model)
-     elif params.model_version == "res50-cnn_distill":
+     elif params.model_version == "res50-cnn_distill" or "cnn_distill":
          model = net.Net(params).cuda() if params.cuda else net.Net(params)
      # fetch loss function and metrics
      loss_fn = net.loss_fn

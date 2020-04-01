@@ -57,7 +57,7 @@ else:
 # Model
 print('==> Building model..')
 # net = VGG('VGG19')
-# net = ResNet18()
+net = ResNet18()
 # net = PreActResNet18()
 # net = GoogLeNet()
 # net = DenseNet121()
@@ -70,7 +70,7 @@ print('==> Building model..')
 # net = ShuffleNetV2(1)
 #net = EfficientNetB0()
 #net = ResNet50();
-net = ResNet152(100)
+#net = ResNet152(100)
 net = net.to(device)
 if device == 'cuda':
     net = torch.nn.DataParallel(net)
@@ -80,7 +80,7 @@ if args.resume:
     # Load checkpoint.
     print('==> Resuming from checkpoint..')
     assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
-    checkpoint = torch.load('./checkpoint/resnet152.pth')
+    checkpoint = torch.load('./checkpoint/resnet18.pth')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
@@ -142,7 +142,7 @@ def test(epoch):
         }
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/resnet152.pth')
+        torch.save(state, './checkpoint/resnet18.pth')
         best_acc = acc
 
 
