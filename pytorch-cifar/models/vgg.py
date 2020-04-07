@@ -1,7 +1,8 @@
 '''VGG11/13/16/19 in Pytorch.'''
 import torch
 import torch.nn as nn
-
+import os
+import time
 
 cfg = {
     'VGG11': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
@@ -39,9 +40,14 @@ class VGG(nn.Module):
 
 
 def test():
+    os.environ["OMP_NUM_THREADS"] = '8'
     net = VGG('VGG11')
-    x = torch.randn(2,3,32,32)
-    y = net(x)
-    print(y.size())
+    for i in range(0,100):
+        start=time.perf_counter()
+        x = torch.randn(2,3,32,32)
+        y = net(x)
+        torch.cuda.synchronize()
+        end=time.perf_counter()
+        print("Total : Time(ms): {:.04}".format((end-start)*1000/2))
 
-# test()
+test()

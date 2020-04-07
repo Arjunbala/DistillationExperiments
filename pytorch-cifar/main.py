@@ -12,6 +12,7 @@ import os
 import argparse
 
 from models import *
+from models import alexnet
 from utils import progress_bar
 
 
@@ -23,7 +24,6 @@ parser.add_argument('--dataset',default='cifar10', help='Dataset for training')
 args = parser.parse_args()
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(device)
 best_acc = 0  # best test accuracy
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
@@ -56,8 +56,9 @@ else:
 
 # Model
 print('==> Building model..')
-# net = VGG('VGG19')
-net = ResNet18()
+net = VGG('VGG11')
+#net = alexnet.alexnet()
+#net = ResNet18()
 # net = PreActResNet18()
 # net = GoogLeNet()
 # net = DenseNet121()
@@ -80,7 +81,7 @@ if args.resume:
     # Load checkpoint.
     print('==> Resuming from checkpoint..')
     assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
-    checkpoint = torch.load('./checkpoint/resnet18.pth')
+    checkpoint = torch.load('./checkpoint/vgg11.pth')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
@@ -147,5 +148,5 @@ def test(epoch):
 
 
 for epoch in range(start_epoch, start_epoch+args.epoch):
-    train(epoch)
+ #   train(epoch)
     test(epoch)
